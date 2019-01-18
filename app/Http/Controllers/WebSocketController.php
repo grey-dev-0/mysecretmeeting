@@ -55,7 +55,7 @@ class WebSocketController extends Controller implements MessageComponentInterfac
         $message = json_decode($message, true);
         switch($message['action']){
             case 'init': $this->sendMessage($connection, $message
-                + ['qr_code' => $this->connections->get($connection->resourceId)['qr_code']]); break;
+                + ['id' => $connection->resourceId, 'qr_code' => $this->connections->get($connection->resourceId)['qr_code']]); break;
             case 'query': $this->sendMessage($connection,
                 ['success' => $this->connections->where('qr_code', $message['qr_code'])->count() > 0]); break;
         }

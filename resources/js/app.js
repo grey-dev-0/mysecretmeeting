@@ -3,17 +3,30 @@
         window.rtc = new Vue({
             el: '#app',
             data: {
+                config: {
+                    iceServers: [
+                        {url:'stun:stun.l.google.com:19302'},
+                        {url:'stun:stun1.l.google.com:19302'},
+                        {url:'stun:stun2.l.google.com:19302'},
+                        {url:'stun:stun3.l.google.com:19302'}/*,
+                        {url:'stun:stun4.l.google.com:19302'}*/
+                    ]
+                },
                 connections: {
-                    qr_code: null
+                    qr_code: null,
+                    my_connection: {
+                        websocket_id: null,
+                        connection: null,
+                        stream: null,
+                        error: null
+                    }
                 },
                 channels: {},
                 websocket: null
             },
             methods: {
                 init: function(domain){
-                    navigator.getUserMedia = navigator.getUserMedia ||
-                        navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-                    this.websocket = new WebSocket('ws://' + domain + '/websocket');
+                    this.websocket = new WebSocket('wss://' + domain + '/websocket');
                     this.websocket.onopen = function(){
                         rtc.websocket.send(JSON.stringify({
                             action: 'init'
@@ -24,9 +37,43 @@
                         switch(message.action){
                             case 'init':
                                 rtc.connections.qr_code = message.qr_code;
+                                rtc.connections.my_connection.websocket_id = message.id;
+                                rtc.connect(message.id);
                                 new ClipboardJS('#copy-url');
                                 break;
                         }
+                    }
+                },
+                connect: function(websocketId){
+                    var connection;
+                    if(this.connections.my_connection.websocket_id == websocketId){
+                        connection = this.connections.my_connection.connection = new RTCPeerConnection(this.config);
+                        this.emitStream(connection);
+                    } else{
+                        connection = new RTCPeerConnection(this.config);
+                        this.connections[websocketId] = {connection: connection};
+                    }
+                },
+                emitStream: function(connection){
+                    var setConnectionStream = function(stream){
+                        rtc.connections.my_connection.stream = URL.createObjectURL(stream);
+                        connection.addStream(stream);
+                    };
+                    var streamError = function(error){
+                        rtc.connections.my_connection.error = error.message;
+                    };
+                    var streamConfig = {audio: true, video: true};
+                    switch(true){
+                        case (navigator.getUserMedia !== undefined):
+                            navigator.getUserMedia(streamConfig, setConnectionStream, streamError); break;
+                        case (navigator.webkitGetUserMedia !== undefined):
+                            navigator.webkitGetUserMedia(streamConfig, setConnectionStream, streamError); break;
+                        case (navigator.mediaDevices !== undefined && navigator.mediaDevices.getUserMedia !== undefined):
+                            navigator.mediaDevices.getUserMedia(streamConfig).then(setConnectionStream)
+                                .catch(streamError); break;
+                        case (navigator.mozGetUserMedia !== undefined):
+                            navigator.mozGetUserMedia(streamConfig, setConnectionStream, function(){}); break;
+                        default: alert('Could NOT access Audio / Video Input!');
                     }
                 }
             }
