@@ -56,7 +56,10 @@
                 },
                 emitStream: function(connection){
                     var setConnectionStream = function(stream){
-                        rtc.connections.my_connection.stream = URL.createObjectURL(stream);
+                        rtc.connections.my_connection.stream = stream;
+                        setTimeout(function(){
+                            rtc.$refs.my_video[0].srcObject = stream;
+                        });
                         connection.addStream(stream);
                     };
                     var streamError = function(error){

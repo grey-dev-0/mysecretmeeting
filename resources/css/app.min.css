@@ -1,1 +1,1 @@
-body{background-color:#e1e1e1}body #app #capture-qr{margin-top:.5rem}
+body{background-color:#e1e1e1}body #app .card{margin-top:15px}body #app #capture-qr{margin-top:.5rem}body #app video{-webkit-transform:rotateY(180deg);-moz-transform:rotateY(180deg);-ms-transform:rotateY(180deg);-o-transform:rotateY(180deg);transform:rotateY(180deg);height:50%}
