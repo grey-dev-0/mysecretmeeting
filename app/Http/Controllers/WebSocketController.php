@@ -58,6 +58,7 @@ class WebSocketController extends Controller implements MessageComponentInterfac
                 + ['id' => $connection->resourceId, 'qr_code' => $this->connections->get($connection->resourceId)['qr_code']]); break;
             case 'query': $this->sendMessage($connection,
                 ['success' => $this->connections->where('qr_code', $message['qr_code'])->count() > 0]); break;
+            case 'sdp': $this->publishSdp($connection, $message); break;
         }
     }
 
@@ -71,5 +72,20 @@ class WebSocketController extends Controller implements MessageComponentInterfac
         if(is_array($message))
             $message = json_encode($message);
         $connection->send($message);
+    }
+
+    /**
+     * Publishing Web RTC SDP to related peers.
+     *
+     * @param $connection
+     * @param $message
+     */
+    private function publishSdp(&$connection, $message){
+        $connections = $this->connections->where('qr_code', $this->connections->get($connection->resourceId)['qr_code']);
+        $message['id'] = $connection->resourceId;
+        $message = json_encode($message);
+        foreach($connections as $resourceId => &$peer)
+            if($connection->resourceId != $resourceId)
+                $peer['connection']->send($message);
     }
 }

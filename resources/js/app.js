@@ -41,6 +41,10 @@
                                 rtc.connect(message.id);
                                 new ClipboardJS('#copy-url');
                                 break;
+                            case 'sdp':
+                                rtc.connect(message.id);
+                                rtc.exchangeSdps(message.id, message.sdp);
+                                break;
                         }
                     }
                 },
@@ -51,8 +55,17 @@
                         this.emitStream(connection);
                     } else{
                         connection = new RTCPeerConnection(this.config);
-                        this.connections[websocketId] = {connection: connection};
+                        this.connections[websocketId] = {connection: connection, stream: null, error: null};
+                        connection.onaddstream = function(e){
+                            rtc.connections[websocketId].stream = e.stream;
+                        };
                     }
+                    connection.onicecandidate = function(e){
+                        this.websocket.send(JSON.stringify({
+                            action: 'candidate',
+                            candidate: e.candidate
+                        }));
+                    };
                 },
                 emitStream: function(connection){
                     var setConnectionStream = function(stream){
@@ -78,6 +91,23 @@
                             navigator.mozGetUserMedia(streamConfig, setConnectionStream, function(){}); break;
                         default: alert('Could NOT access Audio / Video Input!');
                     }
+                },
+                exchangeSdps: function(websocketId, sdp){
+                    var connection = (this.connections.my_connection.websocket_id == websocketId)?
+                        this.connections.my_connection.connection : rtc.connections[websocketId].connection;
+                    if(sdp.type == 'offer'){
+                        setTimeout(function(){
+                            connection.setRemoteDescription(new RTCSessionDescription(sdp));
+                            connection.createAnswer().then(function(answer){
+                                connection.setLocalDescription(answer);
+                                rtc.websocket.send(JSON.stringify({
+                                    action: 'sdp',
+                                    sdp: answer
+                                }));
+                            });
+                        }, 1000);
+                    } else
+                        this.connections[websocketId].connection.setRemoteDescription(new RTCSessionDescription(sdp));
                 }
             }
         });

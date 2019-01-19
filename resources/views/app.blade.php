@@ -32,6 +32,10 @@
                         <video class="col" autoplay muted v-if="connection.stream !== null" ref="my_video"></video>
                         <h3 class="text-center w-100" v-if="connection.error !== null">@{{connection.error}}</h3>
                     </div>
+                    <div class="card-body row" v-else>
+                        <video src="" class="col" autoplay v-if="connection.stream !== null" ref="id"></video>
+                        <h3 class="text-center w-100" v-if="connection.error !== null">@{{connection.error}}</h3>
+                    </div>
                 </div>
             </div>
         </template>
