@@ -68,6 +68,7 @@ class WebSocketController extends Controller implements MessageComponentInterfac
             case 'query': $this->sendMessage($connection,
                 ['success' => $this->connections->where('qr_code', $message['qr_code'])->count() > 0]); break;
             case 'sdp': $this->publishSdp($connection, $message); break;
+            case 'candidate': $this->publishIce($connection, $message); break;
         }
     }
 
@@ -106,6 +107,26 @@ class WebSocketController extends Controller implements MessageComponentInterfac
      * @param $message
      */
     private function publishSdp(&$connection, $message){
+        $this->publishData($connection, $message);
+    }
+
+    /**
+     * Publishing Web RTC ICE candidates to related peers.
+     *
+     * @param $connection
+     * @param $message
+     */
+    private function publishIce(&$connection, $message){
+        $this->publishData($connection, $message);
+    }
+
+    /**
+     * Publishing Web RTC network and / or media data to related peers.
+     *
+     * @param $connection
+     * @param $message
+     */
+    private function publishData(&$connection, $message){
         $connections = $this->connections->where('qr_code', $this->connections->get($connection->resourceId)['qr_code']);
         $message['id'] = $connection->resourceId;
         $message = json_encode($message);

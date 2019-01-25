@@ -47,6 +47,10 @@
                                 rtc.connect(message.id);
                                 rtc.exchangeSdps(message.id, message.sdp);
                                 break;
+                            case 'candidate':
+                                if(message.candidate != '' && message.candidate != null)
+                                    rtc.connections[message.id].connection.addIceCandidate(new RTCIceCandidate(message.candidate));
+                                break;
                         }
                     }
                 },
@@ -60,6 +64,7 @@
                         this.connections[websocketId] = {connection: connection, stream: null, error: null};
                         connection.onaddstream = function(e){
                             rtc.connections[websocketId].stream = e.stream;
+                            rtc.$refs['video'+websocketId][0].srcObject = stream;
                         };
                     }
                     connection.onicecandidate = function(e){
