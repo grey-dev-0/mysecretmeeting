@@ -43,6 +43,7 @@
 </div>
 
 <script type="text/javascript">
+    var initCode = '{{request('c', '')}}';
     $(document).ready(function(){
         rtc.init('{{str_replace(['http://', 'https://'], '', url('/'))}}');
     });

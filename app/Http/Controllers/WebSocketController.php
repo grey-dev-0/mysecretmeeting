@@ -54,8 +54,14 @@ class WebSocketController extends Controller implements MessageComponentInterfac
     function onMessage(ConnectionInterface $connection, $message){
         $message = json_decode($message, true);
         switch($message['action']){
-            case 'init': $this->sendMessage($connection, $message
-                + ['id' => $connection->resourceId, 'qr_code' => $this->connections->get($connection->resourceId)['qr_code']]); break;
+            case 'init':
+                if(!empty($message['qr_code'])){
+                    $peer = $this->connections->get($connection->resourceId);
+                    $peer['qr_code'] = $message['qr_code'];
+                    $this->connections->put($connection->resourceId, $peer);
+                } else
+                    $message['qr_code'] = $this->connections->get($connection->resourceId)['qr_code'];
+                $this->sendMessage($connection, $message + ['id' => $connection->resourceId]); break;
             case 'query': $this->sendMessage($connection,
                 ['success' => $this->connections->where('qr_code', $message['qr_code'])->count() > 0]); break;
             case 'sdp': $this->publishSdp($connection, $message); break;

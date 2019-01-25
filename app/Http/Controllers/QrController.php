@@ -4,7 +4,7 @@ class QrController extends Controller{
     public function getIndex(){
         if($this->sendToWebsocket(['action' => 'query', 'qr_code' => request('c')]))
             return response()->streamDownload(function(){
-                echo \QrGenerator::writeString(request('c'));
+                echo \QrGenerator::writeString(url('/').'?c='.request('c'));
             }, 'qr.png');
         else
             return abort(404, 'Room Not Found!');

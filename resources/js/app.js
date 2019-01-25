@@ -29,7 +29,8 @@
                     this.websocket = new WebSocket('wss://' + domain + '/websocket');
                     this.websocket.onopen = function(){
                         rtc.websocket.send(JSON.stringify({
-                            action: 'init'
+                            action: 'init',
+                            qr_code: initCode
                         }));
                     };
                     this.websocket.onmessage = function(e){
