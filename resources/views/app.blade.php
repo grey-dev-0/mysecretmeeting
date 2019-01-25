@@ -23,10 +23,8 @@
                     <div class="card-body" v-if="id == 'qr_code'">
                         <img class="img-fluid" id="qr-code" :src="(connections.qr_code !== null)? ('{{url('qr')}}?c='+connections.qr_code) : '{{asset('resources/img/no-qr.png')}}'" alt="QR Code">
                         <div id="copy-url" class="btn btn-outline-primary btn-block" :data-clipboard-text="'{{url('/')}}?c='+connections.qr_code">Copy QR Link</div>
-                        <div id="upload-qr" class="btn btn-outline-info btn-block">Upload QR</div>
-                        <input type="file" class="d-none" name="qr_upload">
-                        <div id="capture-qr" class="btn btn-outline-secondary btn-block">Capture QR</div>
-                        <input type="file" accept="image/*;capture=camera" class="d-none">
+                        <div id="capture-qr" class="btn btn-outline-info btn-block">Capture QR</div>
+                        <input type="file" accept="image/*;capture=camera" class="d-none" name="qr_image">
                     </div>
                     <div class="card-body row" v-if="id == 'my_connection'">
                         <video class="col" autoplay muted v-if="connection.stream !== null" ref="my_video"></video>

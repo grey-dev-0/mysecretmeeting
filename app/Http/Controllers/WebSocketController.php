@@ -59,9 +59,12 @@ class WebSocketController extends Controller implements MessageComponentInterfac
                     $peer = $this->connections->get($connection->resourceId);
                     $peer['qr_code'] = $message['qr_code'];
                     $this->connections->put($connection->resourceId, $peer);
-                } else
+                    $peers = $this->getRelatedPeers($connection->resourceId);
+                } else{
                     $message['qr_code'] = $this->connections->get($connection->resourceId)['qr_code'];
-                $this->sendMessage($connection, $message + ['id' => $connection->resourceId]); break;
+                    $peers = [];
+                }
+                $this->sendMessage($connection, $message + ['id' => $connection->resourceId] + compact('peers')); break;
             case 'query': $this->sendMessage($connection,
                 ['success' => $this->connections->where('qr_code', $message['qr_code'])->count() > 0]); break;
             case 'sdp': $this->publishSdp($connection, $message); break;
@@ -78,6 +81,22 @@ class WebSocketController extends Controller implements MessageComponentInterfac
         if(is_array($message))
             $message = json_encode($message);
         $connection->send($message);
+    }
+
+    /**
+     * Getting connection IDs of the peers that share the same QR code of the given connection ID.
+     *
+     * @param $resourceId int Connection ID.
+     * @return int[]
+     */
+    private function getRelatedPeers($resourceId){
+        $peers = $this->connections->where('qr_code', $this->connections[$resourceId]['qr_code']);
+        $ids = [];
+        $peers->each(function($peer, $id) use(&$ids, $resourceId){
+            if($resourceId != $id)
+                $ids[] = $id;
+        });
+        return $ids;
     }
 
     /**

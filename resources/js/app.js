@@ -40,6 +40,7 @@
                                 rtc.connections.qr_code = message.qr_code;
                                 rtc.connections.my_connection.websocket_id = message.id;
                                 rtc.connect(message.id);
+                                rtc.call(message.peers);
                                 new ClipboardJS('#copy-url');
                                 break;
                             case 'sdp':
@@ -62,7 +63,7 @@
                         };
                     }
                     connection.onicecandidate = function(e){
-                        this.websocket.send(JSON.stringify({
+                        rtc.websocket.send(JSON.stringify({
                             action: 'candidate',
                             candidate: e.candidate
                         }));
@@ -91,6 +92,21 @@
                         case (navigator.mozGetUserMedia !== undefined):
                             navigator.mozGetUserMedia(streamConfig, setConnectionStream, function(){}); break;
                         default: alert('Could NOT access Audio / Video Input!');
+                    }
+                },
+                call: function(peerIds){
+                    for(var i in peerIds){
+                        if(rtc.connections[peerIds[i]] === undefined)
+                            this.connect(peerIds[i]);
+                        setTimeout(function(){
+                            rtc.connections[peerIds[i]].connection.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true }).then(function(offer){
+                                rtc.connections[peerIds[i]].connection.setLocalDescription(offer);
+                                rtc.websocket.send(JSON.stringify({
+                                    action: 'sdp',
+                                    sdp: offer
+                                }));
+                            });
+                        }, 1000);
                     }
                 },
                 exchangeSdps: function(websocketId, sdp){
