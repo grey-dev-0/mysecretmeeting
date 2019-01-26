@@ -18,7 +18,8 @@
                         websocket_id: null,
                         connection: null,
                         stream: null,
-                        error: null
+                        error: null,
+                        candidates: []
                     }
                 },
                 channels: {},
@@ -44,12 +45,16 @@
                                 new ClipboardJS('#copy-url');
                                 break;
                             case 'sdp':
-                                rtc.connect(message.id);
+                                if(rtc.connections[message.id] === undefined)
+                                    rtc.connect(message.id);
                                 rtc.exchangeSdps(message.id, message.sdp);
                                 break;
                             case 'candidate':
-                                if(message.candidate != '' && message.candidate != null)
-                                    rtc.connections[message.id].connection.addIceCandidate(new RTCIceCandidate(message.candidate));
+                                if(message.candidate != '' && message.candidate != null){
+                                    if(!rtc.connections[message.id].connection.remoteDescription)
+                                        rtc.connections[message.id].candidates.push(message.candidate);
+                                    else
+                                        rtc.connections[message.id].connection.addIceCandidate(new RTCIceCandidate(message.candidate));}
                                 break;
                         }
                     }
@@ -58,13 +63,14 @@
                     var connection;
                     if(this.connections.my_connection.websocket_id == websocketId){
                         connection = this.connections.my_connection.connection = new RTCPeerConnection(this.config);
-                        this.emitStream(connection);
+                        this.initLocalStream();
                     } else{
                         connection = new RTCPeerConnection(this.config);
-                        this.connections[websocketId] = {connection: connection, stream: null, error: null};
-                        connection.onaddstream = function(e){
-                            rtc.connections[websocketId].stream = e.stream;
-                            rtc.$refs['video'+websocketId][0].srcObject = stream;
+                        this.connections[websocketId] = {connection: connection, stream: null, error: null, candidates: []};
+                        connection.ontrack = function(e){
+                            console.log('stream track received', e);
+                            rtc.connections[websocketId].stream = e.streams[0];
+                            rtc.$refs['video'+websocketId][0].srcObject = e.streams[0];
                         };
                     }
                     connection.onicecandidate = function(e){
@@ -74,13 +80,12 @@
                         }));
                     };
                 },
-                emitStream: function(connection){
+                initLocalStream: function(){
                     var setConnectionStream = function(stream){
                         rtc.connections.my_connection.stream = stream;
                         setTimeout(function(){
                             rtc.$refs.my_video[0].srcObject = stream;
                         });
-                        connection.addStream(stream);
                     };
                     var streamError = function(error){
                         rtc.connections.my_connection.error = error.message;
@@ -101,35 +106,47 @@
                 },
                 call: function(peerIds){
                     for(var i in peerIds){
-                        if(rtc.connections[peerIds[i]] === undefined)
+                        if(this.connections[peerIds[i]] === undefined)
                             this.connect(peerIds[i]);
-                        setTimeout(function(){
-                            rtc.connections[peerIds[i]].connection.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true }).then(function(offer){
-                                rtc.connections[peerIds[i]].connection.setLocalDescription(offer);
-                                rtc.websocket.send(JSON.stringify({
-                                    action: 'sdp',
-                                    sdp: offer
-                                }));
-                            });
-                        }, 1000);
+                        this.connections[peerIds[i]].connection.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true }).then(function(offer){
+                            rtc.connections[peerIds[i]].connection.setLocalDescription(offer);
+                            rtc.websocket.send(JSON.stringify({
+                                action: 'sdp',
+                                sdp: offer
+                            }));
+                        });
                     }
                 },
                 exchangeSdps: function(websocketId, sdp){
                     var connection = (this.connections.my_connection.websocket_id == websocketId)?
-                        this.connections.my_connection.connection : rtc.connections[websocketId].connection;
-                    if(sdp.type == 'offer'){
+                        this.connections.my_connection.connection : this.connections[websocketId].connection;
                         setTimeout(function(){
-                            connection.setRemoteDescription(new RTCSessionDescription(sdp));
-                            connection.createAnswer().then(function(answer){
-                                connection.setLocalDescription(answer);
-                                rtc.websocket.send(JSON.stringify({
-                                    action: 'sdp',
-                                    sdp: answer
-                                }));
-                            });
+                            if(sdp.type == 'offer'){
+                                connection.setRemoteDescription(new RTCSessionDescription(sdp));
+                                connection.createAnswer().then(function (answer) {
+                                    connection.setLocalDescription(answer);
+                                    rtc.websocket.send(JSON.stringify({
+                                        action: 'sdp',
+                                        sdp: answer
+                                    }));
+                                    rtc.addCandidates(websocketId);
+                                });
+                            } else{
+                                connection.setRemoteDescription(new RTCSessionDescription(sdp)).then(function(){
+                                    rtc.addCandidates(websocketId);
+                                });
+                                rtc.connections.my_connection.stream.getTracks().forEach(function(track){
+                                    connection.addTrack(track, rtc.connections.my_connection.stream);
+                                    console.log('streamed track of stream', rtc.connections.my_connection.stream);
+                                });
+                            }
                         }, 1000);
-                    } else
-                        this.connections[websocketId].connection.setRemoteDescription(new RTCSessionDescription(sdp));
+                },
+                addCandidates: function(websocketId){
+                    var candidates = this.connections[websocketId].candidates;
+                    for(var i in candidates)
+                        this.connections[websocketId].connection.addIceCandidate(candidates[i]);
+                    this.connections[websocketId].candidates = [];
                 }
             }
         });
