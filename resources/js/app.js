@@ -8,8 +8,8 @@
                         {url:'stun:stun.l.google.com:19302'},
                         {url:'stun:stun1.l.google.com:19302'},
                         {url:'stun:stun2.l.google.com:19302'},
-                        {url:'stun:stun3.l.google.com:19302'}/*,
-                        {url:'stun:stun4.l.google.com:19302'}*/
+                        {url:'stun:stun3.l.google.com:19302'},
+                        {url:'stun:stun4.l.google.com:19302'}
                     ]
                 },
                 connections: {
@@ -117,14 +117,14 @@
                 },
                 exchangeSdps: function(websocketId, sdp){
                     var connection = this.connections[websocketId].connection;
+                    rtc.connections.my_connection.stream.getTracks().forEach(function(track){
+                        console.log('Adding stream track', track, 'to connection', connection);
+                        connection.addTrack(track, rtc.connections.my_connection.stream);
+                    });
                     setTimeout(function(){
-                        rtc.connections.my_connection.stream.getTracks().forEach(function(track){
-                            console.log('Adding stream track', track, 'to connection', connection);
-                            connection.addTrack(track, rtc.connections.my_connection.stream);
-                        });
                         if(sdp.type == 'offer'){
                             connection.setRemoteDescription(new RTCSessionDescription(sdp));
-                            connection.createAnswer().then(function (answer) {
+                            connection.createAnswer().then(function (answer){
                                 connection.setLocalDescription(answer);
                                 rtc.websocket.send(JSON.stringify({
                                     action: 'sdp',
