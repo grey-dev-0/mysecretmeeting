@@ -47,10 +47,6 @@
                         case 'sdp':
                             if(rtc.connections[message.id] === undefined)
                                 rtc.connect(message.id);
-                            rtc.connections.my_connection.stream.getTracks().forEach(function(track){
-                                console.log('Adding stream track', track, 'to connection #', message.id);
-                                rtc.connections[message.id].connection.addTrack(track, rtc.connections.my_connection.stream);
-                            });
                             rtc.exchangeSdps(message.id, message.sdp);
                             break;
                         case 'candidate':
@@ -145,6 +141,13 @@
                         connection.setRemoteDescription(new RTCSessionDescription(sdp)).then(function(){
                             rtc.addCandidates(websocketId);
                         });
+                    connection.onnegotiationneeded = function(){
+                        rtc.call([websocketId]);
+                    };
+                    rtc.connections.my_connection.stream.getTracks().forEach(function(track){
+                        console.log('Adding stream track', track, 'to connection ', connection);
+                        connection.addTrack(track, rtc.connections.my_connection.stream);
+                    });
                 }, 1000);
             },
             addCandidates: function(websocketId){
