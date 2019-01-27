@@ -8,7 +8,6 @@
     <title>My Secret Meeting</title>
     <script type="text/javascript" src="{{asset('resources/js/jquery.min.js')}}"></script>
     <script type="text/javascript" src="{{asset('resources/js/bootstrap.bundle.min.js')}}"></script>
-    <script type="text/javascript" src="{{asset('resources/js/vue.min.js')}}"></script>
     <script type="text/javascript" src="{{asset('resources/js/clipboard.min.js')}}"></script>
     <script type="text/javascript" src="{{asset('resources/js/app.min.js')}}"></script>
     <link rel="stylesheet" href="{{asset('resources/css/bootstrap.min.css')}}" type="text/css">
@@ -17,31 +16,30 @@
 <body>
 <div class="container-fluid">
     <div id="app" class="row">
-        <template v-for="(connection, id, index) in connections">
-            <div :class="(id == 'qr_code')? 'col-xs-6 col-sm-6 col-md-3 col-lg-2' : 'col'">
-                <div class="card">
-                    <div class="card-body" v-if="id == 'qr_code'">
-                        <img class="img-fluid" id="qr-code" :src="(connections.qr_code !== null)? ('{{url('qr')}}?c='+connections.qr_code) : '{{asset('resources/img/no-qr.png')}}'" alt="QR Code">
-                        <div id="copy-url" class="btn btn-outline-primary btn-block" :data-clipboard-text="'{{url('/')}}?c='+connections.qr_code">Copy QR Link</div>
-                        <div id="capture-qr" class="btn btn-outline-info btn-block">Capture QR</div>
-                        <input type="file" accept="image/*;capture=camera" class="d-none" name="qr_image">
-                    </div>
-                    <div class="card-body row" v-else-if="id == 'my_connection'">
-                        <video class="col" autoplay muted v-if="connection.stream !== null" ref="my_video"></video>
-                        <h3 class="text-center w-100" v-if="connection.error !== null">@{{connection.error}}</h3>
-                    </div>
-                    <div class="card-body row" v-else-if="connection !== null">
-                        <video src="" class="col" autoplay v-if="connection.stream !== null" :ref="'video'+id"></video>
-                        <h3 class="text-center w-100" v-if="connection.error !== null">@{{connection.error}}</h3>
-                    </div>
+        <div class="col-xs-6 col-sm-6 col-md-3 col-lg-2">
+            <div class="card">
+                <div class="card-body">
+                    <img class="img-fluid" id="qr-code" src="" alt="QR Code">
+                    <div id="copy-url" class="btn btn-outline-primary btn-block" data-clipboard-text="'{{url('/')}}">Copy QR Link</div>
+                    <div id="capture-qr" class="btn btn-outline-info btn-block">Capture QR</div>
+                    <input type="file" accept="image/*;capture=camera" class="d-none" name="qr_image">
                 </div>
             </div>
-        </template>
+        </div>
+        <div class="col" id="my-connection">
+            <div class="card">
+                <div class="card-body row">
+                    <video class="col d-none" autoplay muted></video>
+                    <h3 class="d-none w-100 text-center error"></h3>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script type="text/javascript">
     var initCode = '{{request('c', '')}}';
+    var qrPlaceholder = '{{asset('resources/img/no-qr.png')}}';
     $(document).ready(function(){
         rtc.init('{{str_replace(['http://', 'https://'], '', url('/'))}}');
     });
