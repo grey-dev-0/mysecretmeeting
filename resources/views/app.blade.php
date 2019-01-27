@@ -19,7 +19,7 @@
         <div class="col-xs-6 col-sm-6 col-md-3 col-lg-2">
             <div class="card">
                 <div class="card-body">
-                    <img class="img-fluid" id="qr-code" src="" alt="QR Code">
+                    <img class="img-fluid" id="qr-code" src="" alt="QR Code" onerror="this.src='{{asset('resources/img/no-qr.png')}}';this.onerror=null">
                     <div id="copy-url" class="btn btn-outline-primary btn-block" data-clipboard-text="'{{url('/')}}">Copy QR Link</div>
                     <div id="capture-qr" class="btn btn-outline-info btn-block">Capture QR</div>
                     <input type="file" accept="image/*;capture=camera" class="d-none" name="qr_image">
@@ -39,7 +39,6 @@
 
 <script type="text/javascript">
     var initCode = '{{request('c', '')}}';
-    var qrPlaceholder = '{{asset('resources/img/no-qr.png')}}';
     $(document).ready(function(){
         rtc.init('{{str_replace(['http://', 'https://'], '', url('/'))}}');
     });

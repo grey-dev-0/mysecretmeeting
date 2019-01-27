@@ -4,9 +4,9 @@
             // Data
             config: {
                 iceServers: [
-                    {url:'stun:stun.l.google.com:19302'},
-                    {url:'stun:stun1.l.google.com:19302'},
-                    {url:'stun:stun2.l.google.com:19302'},
+                    {url:'stun:stun.12connect.com:3478'},
+                    {url:'stun:stun.12voip.com:3478'},
+                    {url:'stun:stun.1und1.de:3478'},
                     {url:'stun:stun3.l.google.com:19302'},
                     {url:'stun:stun4.l.google.com:19302'}
                 ]
@@ -40,13 +40,17 @@
                         case 'init':
                             rtc.connections.qr_code = message.qr_code;
                             rtc.connections.my_connection.websocket_id = message.id;
-                            rtc.connect(message.id);
+                            rtc.initLocalStream();
                             rtc.call(message.peers);
                             new ClipboardJS('#copy-url');
                             break;
                         case 'sdp':
                             if(rtc.connections[message.id] === undefined)
                                 rtc.connect(message.id);
+                            rtc.connections.my_connection.stream.getTracks().forEach(function(track){
+                                console.log('Adding stream track', track, 'to connection #', message.id);
+                                rtc.connections[message.id].connection.addTrack(track, rtc.connections.my_connection.stream);
+                            });
                             rtc.exchangeSdps(message.id, message.sdp);
                             break;
                         case 'candidate':
@@ -60,16 +64,23 @@
                 }
             },
             connect: function(websocketId){
-                if(this.connections.my_connection.websocket_id == websocketId)
-                    this.initLocalStream();
-                else{
+                if(this.connections.my_connection.websocket_id != websocketId){
                     var connection = new RTCPeerConnection(this.config);
                     this.connections[websocketId] = {connection: connection, stream: null, error: null, candidates: []};
                     $('#app').append($(this.peerCell).attr('id', websocketId));
                     connection.ontrack = function(e){
-                        console.log('Received stream', e.streams, 'from connection', websocketId);
+                        console.log('Received stream tracks', e.streams[0].getTracks(), 'from connection', websocketId);
                         rtc.connections[websocketId].stream = e.streams[0];
-                        rtc.$refs['video'+websocketId][0].srcObject = e.streams[0];
+                        var video = $('#'+websocketId).find('video').removeClass('d-none')[0];
+                        if(video.srcObject == null){
+                            console.log('setting received stream.');
+                            video.srcObject = e.streams[0];
+                        } else{
+                            console.log('adding track to current stream');
+                            e.streams[0].getTracks().forEach(function(track){
+                                video.srcObject.addTrack(track);
+                            });
+                        }
                     };
                     connection.onicecandidate = function(e){
                         rtc.websocket.send(JSON.stringify({
@@ -81,13 +92,14 @@
             },
             initLocalStream: function(){
                 var setConnectionStream = function(stream){
-                    rtc.connections.my_connection.stream = stream;
                     setTimeout(function(){
-                        rtc.$refs.my_video[0].srcObject = stream;
+                        rtc.connections.my_connection.stream = stream;
+                        $('#my-connection').find('video').removeClass('d-none')[0].srcObject = stream;
                     });
                 };
                 var streamError = function(error){
                     rtc.connections.my_connection.error = error.message;
+                    $('#my-connection').find('h3').removeClass('d-none').text(error.message);
                 };
                 var streamConfig = {audio: true, video: true};
                 switch(true){
@@ -107,7 +119,7 @@
                 for(var i in peerIds){
                     if(this.connections[peerIds[i]] === undefined)
                         this.connect(peerIds[i]);
-                    this.connections[peerIds[i]].connection.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true }).then(function(offer){
+                    this.connections[peerIds[i]].connection.createOffer({offerToReceiveAudio: true, offerToReceiveVideo: true}).then(function(offer){
                         rtc.connections[peerIds[i]].connection.setLocalDescription(offer);
                         rtc.websocket.send(JSON.stringify({
                             action: 'sdp',
@@ -119,13 +131,9 @@
             exchangeSdps: function(websocketId, sdp){
                 var connection = this.connections[websocketId].connection;
                 setTimeout(function(){
-                    rtc.connections.my_connection.stream.getTracks().forEach(function(track){
-                        console.log('Adding stream track', track, 'to connection', connection);
-                        connection.addTrack(track, rtc.connections.my_connection.stream);
-                    });
                     if(sdp.type == 'offer'){
                         connection.setRemoteDescription(new RTCSessionDescription(sdp));
-                        connection.createAnswer().then(function (answer) {
+                        connection.createAnswer({offerToReceiveAudio: true, offerToReceiveVideo: true}).then(function (answer) {
                             connection.setLocalDescription(answer);
                             rtc.websocket.send(JSON.stringify({
                                 action: 'sdp',
