@@ -40,6 +40,9 @@
                         case 'init':
                             rtc.connections.qr_code = message.qr_code;
                             rtc.connections.my_connection.websocket_id = message.id;
+                            var copyUrlButton = $('#copy-url');
+                            $('#qr-code').attr('src', 'https://'+domain+'/qr?c='+message.qr_code);
+                            copyUrlButton.attr('data-clipboard-text', copyUrlButton.attr('data-clipboard-text') + '?c=' + message.qr_code);
                             rtc.initLocalStream();
                             rtc.call(message.peers);
                             new ClipboardJS('#copy-url');
@@ -64,6 +67,7 @@
                     var connection = new RTCPeerConnection(this.config);
                     this.connections[websocketId] = {connection: connection, stream: null, error: null, candidates: []};
                     $('#app').append($(this.peerCell).attr('id', websocketId));
+                    setCellSize();
                     connection.ontrack = function(e){
                         console.log('Received stream tracks', e.streams[0].getTracks(), 'from connection', websocketId);
                         rtc.connections[websocketId].stream = e.streams[0];
@@ -161,5 +165,14 @@
         $('body').on('click', '#capture-qr', function(){
             $(this).next('input').trigger('click');
         });
+        $(window).on('load resize', setCellSize);
+
+        function setCellSize(){
+            var cells = $('#app').children().not('.col-sm-6.col-md-3.col-lg-2');
+            if(window.innerWidth < 400)
+                cells.removeClass('col').addClass('col-12');
+            else
+                cells.removeClass('col-12').addClass('col');
+        }
     });
 })(jQuery, ClipboardJS);
