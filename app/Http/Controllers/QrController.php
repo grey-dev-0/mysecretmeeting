@@ -10,6 +10,13 @@ class QrController extends Controller{
             return abort(404, 'Room Not Found!');
     }
 
+    public function getApp(){
+        if(empty(request('c', '')) || $this->sendToWebsocket(['action' => 'query', 'qr_code' => request('c')]))
+            return view('app');
+        else
+            return abort(404, 'Room Not Found!');
+    }
+
     private function sendToWebsocket($data){
         $loop = \React\EventLoop\Factory::create();
         $connector = new \React\Socket\Connector($loop);

@@ -11,5 +11,5 @@
 |
 */
 
-Route::view('/', 'app');
+Route::get('/', 'QrController@getApp');
 Route::get('qr', 'QrController@getIndex');

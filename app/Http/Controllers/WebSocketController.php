@@ -26,6 +26,7 @@ class WebSocketController extends Controller implements MessageComponentInterfac
      * @throws \Exception
      */
     function onClose(ConnectionInterface $connection){
+        $this->publishData($connection, ['action' => 'close']);
         $message = "Connection #{$connection->resourceId}";
         if(!is_null($this->connections->get($connection->resourceId)['qr_code']))
             $message .= " of QR code {$this->connections[$connection->resourceId]['qr_code']}";

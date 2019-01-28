@@ -59,6 +59,9 @@
                                 else
                                     rtc.connections[message.id].connection.addIceCandidate(new RTCIceCandidate(message.candidate));}
                             break;
+                        case 'close':
+                            $('#'+message.id).remove();
+                            delete rtc.connections[message.id];
                     }
                 }
             },
