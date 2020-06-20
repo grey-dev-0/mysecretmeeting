@@ -77,11 +77,12 @@
                 if(this.host){
                     var peer = this;
                     this.connection.createOffer().then(function(offer){
-                        peer.connection.setLocalDescription(offer);
+                        return peer.connection.setLocalDescription(offer);
+                    }).then(function(){
                         peer.$root.signalingChannel.send(JSON.stringify({
                             action: 'offer',
                             id: peer.id,
-                            offer: offer
+                            offer: peer.connection.localDescription
                         }));
                     });
                 }
@@ -101,16 +102,18 @@
                 });
             },
             handleOffer: function(offer, senderId){
-                this.connection.setRemoteDescription(new RTCSessionDescription(offer));
                 var peer = this;
-                this.connection.createAnswer().then(function(answer){
-                    peer.connection.setLocalDescription(answer);
+                this.connection.setRemoteDescription(new RTCSessionDescription(offer)).then(function(){
+                    return peer.connection.createAnswer();
+                }).then(function(answer){
+                    return peer.connection.setLocalDescription(answer);
+                }).then(function(){
                     peer.$root.signalingChannel.send(JSON.stringify({
                         action: 'answer',
                         id: senderId,
-                        answer: answer
+                        answer: peer.connection.localDescription
                     }));
-                })
+                });
             },
             handleAnswer: function(answer){
                 this.connection.setRemoteDescription(new RTCSessionDescription(answer));
