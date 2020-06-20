@@ -16,7 +16,7 @@
         },
         methods: {
             initSignalingChannel: function(qrCode){
-                this.signalingChannel = new WebSocket(baseUrl.replace(/^https?/, 'ws') + '/websocket');
+                this.signalingChannel = new WebSocket(baseUrl.replace(/^https?/, 'wss') + '/websocket');
                 this.signalingChannel.onopen = function(){
                     app.signalingChannel.send(JSON.stringify({
                         action: 'init',
