@@ -51,11 +51,11 @@
                     }, 100);
                 this.stream = new MediaStream();
                 this.connection.addEventListener('track', function(e){
+                    var peerVideo = $('#' + peer.id).find('video')[0];
                     peer.stream.addTrack(e.track);
+                    if(!peerVideo.srcObject)
+                        peerVideo.srcObject = peer.stream;
                     console.log('Remote Track Added', e.track);
-                });
-                this.$nextTick(function(){
-                    $('#' + this.id).find('video')[0].srcObject = this.stream;
                 });
             },
             sendLocalStream: function(){
