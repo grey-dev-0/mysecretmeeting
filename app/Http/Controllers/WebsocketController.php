@@ -26,7 +26,6 @@ class WebsocketController extends Controller implements MessageComponentInterfac
      */
     function onClose(ConnectionInterface $connection){
         $this->roomHandler->peerDisconnected($connectionId = $connection->resourceId);
-        $this->roomHandler->removeConnection($connectionId);
     }
 
     /**

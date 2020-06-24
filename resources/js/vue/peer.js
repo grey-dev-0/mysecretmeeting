@@ -36,6 +36,7 @@
                     peer.$root.localStream = peer.stream;
                     peer.$nextTick(function(){
                         $('#' + peer.id).find('video')[0].srcObject = peer.stream;
+                        peer.$root.setLocalPeerReady();
                     });
                 }).catch(function(error){
                     peer.error = error;
@@ -74,18 +75,16 @@
                 });
                 this.initRemoteStream();
                 this.addIceListeners();
-                if(this.host){
-                    var peer = this;
-                    this.connection.createOffer().then(function(offer){
-                        return peer.connection.setLocalDescription(offer);
-                    }).then(function(){
-                        peer.$root.signalingChannel.send(JSON.stringify({
-                            action: 'offer',
-                            id: peer.id,
-                            offer: peer.connection.localDescription
-                        }));
-                    });
-                }
+                var peer = this;
+                this.connection.createOffer().then(function(offer){
+                    return peer.connection.setLocalDescription(offer);
+                }).then(function(){
+                    peer.$root.signalingChannel.send(JSON.stringify({
+                        action: 'offer',
+                        id: peer.id,
+                        offer: peer.connection.localDescription
+                    }));
+                });
             },
             addIceListeners: function(){
                 var peer = this;
@@ -116,7 +115,8 @@
                 });
             },
             handleAnswer: function(answer){
-                this.connection.setRemoteDescription(new RTCSessionDescription(answer));
+                if(!this.connection.remoteDescription)
+                    this.connection.setRemoteDescription(new RTCSessionDescription(answer));
             },
             handleCandidate: function(candidate){
                 this.connection.addIceCandidate(new RTCIceCandidate(candidate)).catch(function(e){

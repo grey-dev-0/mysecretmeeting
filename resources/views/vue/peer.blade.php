@@ -12,4 +12,4 @@
         </div>
     </div>
 </script>
-<script src="{{asset('resources/js/vue/peer.min.js')}}?v=a1.1"></script>
+<script src="{{asset('resources/js/vue/peer.min.js')}}?v=a1.2"></script>

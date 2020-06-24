@@ -22,15 +22,6 @@ class RoomHandler{
     }
 
     /**
-     * Removes a closed websocket connection from server memory.
-     *
-     * @param $connectionId int
-     */
-    public function removeConnection($connectionId){
-        unset($this->connections[$connectionId]);
-    }
-
-    /**
      * Gets the websocket connection by its given ID.
      *
      * @param $connectionId int
@@ -60,6 +51,10 @@ class RoomHandler{
         $peer->delete();
         if(Peer::whereRoomId($roomId)->count() == 0)
             Room::whereId($roomId)->delete();
+        else
+            $this->sendMessage($this->getConnections(Peer::whereRoomId($roomId)->pluck('id')),
+                ['action' => 'close', 'id' => $peerId]);
+        unset($this->connections[$peerId]);
     }
 
     public function peerInitialized($roomId, $peerId){

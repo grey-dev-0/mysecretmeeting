@@ -12,6 +12,7 @@
     <script src="{{asset('resources/js/bootstrap.min.js')}}"></script>
     <script src="{{asset('resources/js/vue.min.js')}}"></script>
     <script src="{{asset('resources/js/clipboard.min.js')}}"></script>
+    <script src="{{asset('resources/js/lodash.min.js')}}"></script>
 </head>
 <body>
 <div id="app" class="container-fluid">
@@ -31,6 +32,6 @@
 </script>
 @include('vue.qr')
 @include('vue.peer')
-<script src="{{asset('resources/js/app.min.js')}}"></script>
+<script src="{{asset('resources/js/app.min.js')}}?v=a1.0"></script>
 </body>
 </html>
