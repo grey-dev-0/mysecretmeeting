@@ -4,7 +4,6 @@ use App\Peer;
 use App\Room;
 use Illuminate\Support\Arr;
 use Ratchet\ConnectionInterface;
-use function Sodium\compare;
 
 class RoomHandler{
     /**
@@ -76,11 +75,12 @@ class RoomHandler{
      */
     public function initializePeers($caller, &$message){
         $roomId = $this->peerInitialized($message['code'], $caller->resourceId);
-        $this->sendMessage($caller, ['action' => 'init', 'id' => $caller->resourceId, 'local' => true, 'code' => $roomId]);
+        $time = time();
+        $this->sendMessage($caller, ['action' => 'init', 'id' => $caller->resourceId, 'local' => true, 'code' => $roomId] + compact('time'));
         $callees = $this->getConnections(Peer::whereRoomId($roomId)->where('id', '!=', $caller->resourceId)->pluck('id'));
         foreach($callees as $callee){
-            $this->sendMessage($callee, ['action' => 'init', 'id' => $caller->resourceId, 'local' => false, 'code' => $roomId]);
-            $this->sendMessage($caller, ['action' => 'init', 'id' => $callee->resourceId, 'local' => false, 'code' => $roomId]);
+            $this->sendMessage($callee, ['action' => 'init', 'id' => $caller->resourceId, 'local' => false, 'code' => $roomId] + compact('time'));
+            $this->sendMessage($caller, ['action' => 'init', 'id' => $callee->resourceId, 'local' => false, 'code' => $roomId] + compact('time'));
         }
     }
 

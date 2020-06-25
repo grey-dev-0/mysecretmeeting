@@ -10,6 +10,10 @@
             local: {
                 type: Boolean,
                 required: true
+            },
+            createdAt: {
+                type: Number,
+                default: 0
             }
         },
         data: function(){
@@ -75,16 +79,18 @@
                 });
                 this.initRemoteStream();
                 this.addIceListeners();
-                var peer = this;
-                this.connection.createOffer().then(function(offer){
-                    return peer.connection.setLocalDescription(offer);
-                }).then(function(){
-                    peer.$root.signalingChannel.send(JSON.stringify({
-                        action: 'offer',
-                        id: peer.id,
-                        offer: peer.connection.localDescription
-                    }));
-                });
+                if(this.createdAt > this.$root.createdAt){
+                    var peer = this;
+                    this.connection.createOffer().then(function(offer){
+                        return peer.connection.setLocalDescription(offer);
+                    }).then(function(){
+                        peer.$root.signalingChannel.send(JSON.stringify({
+                            action: 'offer',
+                            id: peer.id,
+                            offer: peer.connection.localDescription
+                        }));
+                    });
+                }
             },
             addIceListeners: function(){
                 var peer = this;

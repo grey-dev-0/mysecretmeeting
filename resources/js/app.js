@@ -10,7 +10,8 @@
             localStream: null,
             ready: false,
             pendingPeers: [],
-            pendingMessages: []
+            pendingMessages: [],
+            createdAt: 0
         },
         computed: {
             cells: function(){
@@ -45,9 +46,11 @@
                     if(message.action == 'init'){
                         app.roomId = message.code;
                         app.$nextTick(function(){
-                            if(message.local)
+                            if(message.local){
+                                app.createdAt = message.time;
                                 app.$refs.qr.initQrButtons();
-                            app.initPeer(message.id, message.local);
+                            }
+                            app.initPeer(message.id, message.local, message.time);
                         });
                     } else if(app.ready)
                         app.handleSignalingMessage(message);
@@ -55,10 +58,11 @@
                         app.pendingMessages.push(message);
                 }
             },
-            initPeer: function(peerId, local){
+            initPeer: function(peerId, local, time){
                 var peer = {
                     id: peerId,
-                    local: local
+                    local: local,
+                    time: time
                 };
                 if(local || this.ready)
                     this.peers.push(peer);

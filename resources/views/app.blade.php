@@ -19,7 +19,7 @@
     <div class="row">
         <qr ref="qr" :code="roomId"></qr>
         <template v-for="(peer, i) in peers">
-            <peer :ref="'p-'+peer.id" :id="peer.id" :local="peer.local"></peer>
+            <peer :ref="'p-'+peer.id" :id="peer.id" :local="peer.local" :created-at="peer.time"></peer>
             <div class="w-100" v-if="i > 0 && (i + 2) % 4 == 0"></div>
         </template>
     </div>
@@ -32,6 +32,6 @@
 </script>
 @include('vue.qr')
 @include('vue.peer')
-<script src="{{asset('resources/js/app.min.js')}}?v=a1.0"></script>
+<script src="{{asset('resources/js/app.min.js')}}?v=a1.1"></script>
 </body>
 </html>
