@@ -1,5 +1,5 @@
 <script id="peer" type="text/x-template">
-    <div class="col" :id="id">
+    <div class="col-12 col-md" :id="id">
         <div class="card">
             <div class="card-body row">
                 <template v-if="stream != null">
