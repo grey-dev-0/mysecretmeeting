@@ -3,6 +3,9 @@ body{
     #app{
         .card{
             margin-top: 15px;
+            video {
+                transform: rotateY(180deg);
+            }
         }
     }
 }

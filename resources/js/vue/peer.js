@@ -21,6 +21,8 @@
                 stream: null,
                 error: null,
                 connection: null,
+                pendingSdp: null,
+                pendingCandidates: [],
                 host: hostPeer
             };
         },
@@ -84,11 +86,11 @@
                     this.connection.createOffer().then(function(offer){
                         return peer.connection.setLocalDescription(offer);
                     }).then(function(){
-                        peer.$root.signalingChannel.send(JSON.stringify({
+                        peer.pendingSdp = {
                             action: 'offer',
                             id: peer.id,
                             offer: peer.connection.localDescription
-                        }));
+                        };
                     });
                 }
             },
@@ -105,29 +107,51 @@
                 this.connection.addEventListener('icecandidateerror', function(e){
                     console.error('ICE error:', e);
                 });
+                this.connection.addEventListener('icegatheringstatechange', function(e){
+                    var connection = e.target;
+                    if(connection.iceGatheringState == 'complete' && peer.pendingSdp != null){
+                        peer.$root.signalingChannel.send(JSON.stringify(peer.pendingSdp));
+                        peer.pendingSdp = null;
+                    }
+                });
             },
             handleOffer: function(offer, senderId){
                 var peer = this;
                 this.connection.setRemoteDescription(new RTCSessionDescription(offer)).then(function(){
+                    peer.addPendingCandidates();
                     return peer.connection.createAnswer();
                 }).then(function(answer){
                     return peer.connection.setLocalDescription(answer);
                 }).then(function(){
-                    peer.$root.signalingChannel.send(JSON.stringify({
+                    peer.pendingSdp = {
                         action: 'answer',
                         id: senderId,
                         answer: peer.connection.localDescription
-                    }));
+                    };
                 });
             },
             handleAnswer: function(answer){
-                if(!this.connection.remoteDescription)
-                    this.connection.setRemoteDescription(new RTCSessionDescription(answer));
+                if(!this.connection.remoteDescription){
+                    var peer = this;
+                    this.connection.setRemoteDescription(new RTCSessionDescription(answer)).then(function(){
+                        peer.addPendingCandidates();
+                    });
+                }
+            },
+            addPendingCandidates: function(){
+                var peer = this;
+                this.pendingCandidates.forEach(function(candidate){
+                    peer.handleCandidate(candidate);
+                });
+                this.pendingCandidates = [];
             },
             handleCandidate: function(candidate){
-                this.connection.addIceCandidate(new RTCIceCandidate(candidate)).catch(function(e){
-                    console.error('Could not add received ICE candidate', e);
-                })
+                if(!this.connection.remoteDescription)
+                    this.pendingCandidates.push(candidate);
+                else
+                    this.connection.addIceCandidate(new RTCIceCandidate(candidate)).catch(function(e){
+                        console.error('Could not add received ICE candidate', e);
+                    });
             }
         }
     });

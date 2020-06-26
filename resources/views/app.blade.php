@@ -7,7 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>My Secret Meting</title>
     <link rel="stylesheet" href="{{asset('resources/css/bootstrap.min.css')}}">
-    <link rel="stylesheet" href="{{asset('resources/css/app.min.css')}}">
+    <link rel="stylesheet" href="{{asset('resources/css/app.min.css')}}?v=a1.0">
     <script src="{{asset('resources/js/jquery.min.js')}}"></script>
     <script src="{{asset('resources/js/bootstrap.min.js')}}"></script>
     <script src="{{asset('resources/js/vue.min.js')}}"></script>
