@@ -1,0 +1,7 @@
+#! /bin/bash
+if [ -n "$1" ] &&  [ "$1" = 'node' ]; then
+    params=(run --rm --volumes-from nginx -itw /home/projects/theultragrey/mysecretmeeting node)
+else
+    params=(exec -itw /home/projects/theultragrey/mysecretmeeting php8-app)
+fi
+docker "${params[@]}" bash
