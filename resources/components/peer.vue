@@ -31,51 +31,46 @@ export default {
             default: 0
         }
     },
-    data(){
-        return {
-            stream: null,
-            error: null,
-            connection: null,
-            pendingSdp: null,
-            pendingCandidates: [],
-            host: hostPeer
-        };
-    },
+    data : () => ({
+        stream: null,
+        error: null,
+        connection: null,
+        pendingSdp: null,
+        pendingCandidates: [],
+        host: hostPeer
+    }),
     methods: {
         initLocalStream(){
-            var peer = this;
-            navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(function(stream){
-                peer.stream = stream;
-                peer.$root.localStream = peer.stream;
-                peer.$nextTick(function(){
-                    $('#' + peer.id).find('video')[0].srcObject = peer.stream;
-                    peer.$root.setLocalPeerReady();
+            navigator.mediaDevices.getUserMedia({video: true, audio: true}).then((stream) => {
+                this.stream = stream;
+                this.$root.localStream = this.stream;
+                this.$nextTick(function(){
+                    $('#' + this.id).find('video')[0].srcObject = this.stream;
+                    this.$root.setLocalPeerReady();
                 });
-            }).catch(function(error){
-                peer.error = error;
+            }).catch((error) => {
+                this.error = error;
             });
         },
         initRemoteStream(){
-            var peer = this;
             if(!this.sendLocalStream())
-                var localStreamSent = setInterval(function(){
-                    if(peer.sendLocalStream())
+                var localStreamSent = setInterval(() => {
+                    if(this.sendLocalStream())
                         clearInterval(localStreamSent);
                 }, 100);
             this.stream = new MediaStream();
-            this.connection.addEventListener('track', function(e){
-                var peerVideo = $('#' + peer.id).find('video')[0];
-                peer.stream.addTrack(e.track);
+            this.connection.addEventListener('track', (e) => {
+                var peerVideo = $('#' + this.id).find('video')[0];
+                this.stream.addTrack(e.track);
                 if(!peerVideo.srcObject)
-                    peerVideo.srcObject = peer.stream;
+                    peerVideo.srcObject = this.stream;
                 console.log('Remote Track Added', e.track);
             });
         },
         sendLocalStream(){
-            var peer = this;
             if(this.$root.localStream != null){
-                this.$root.localStream.getTracks().forEach(function(track){
-                    peer.connection.addTrack(track);
+                this.$root.localStream.getTracks().forEach((track) => {
+                    this.connection.addTrack(track);
                     console.log('Local Track Added', track);
                 });
                 return true;
@@ -89,67 +84,58 @@ export default {
             this.initRemoteStream();
             this.addIceListeners();
             if(this.createdAt > this.$root.createdAt){
-                var peer = this;
-                this.connection.createOffer().then(function(offer){
-                    return peer.connection.setLocalDescription(offer);
-                }).then(function(){
-                    peer.pendingSdp = {
+                this.connection.createOffer().then((offer) => {
+                    return this.connection.setLocalDescription(offer);
+                }).then(() => {
+                    this.pendingSdp = {
                         action: 'offer',
-                        id: peer.id,
-                        offer: peer.connection.localDescription
+                        id: this.id,
+                        offer: this.connection.localDescription
                     };
                 });
             }
         },
         addIceListeners(){
-            var peer = this;
-            this.connection.addEventListener('icecandidate', function(e){
+            this.connection.addEventListener('icecandidate', (e) => {
                 if(e.candidate)
-                    peer.$root.signalingChannel.send(JSON.stringify({
+                    this.$root.signalingChannel.send(JSON.stringify({
                         action: 'candidate',
-                        id: peer.id,
+                        id: this.id,
                         candidate: e.candidate
                     }));
             });
-            this.connection.addEventListener('icecandidateerror', function(e){
+            this.connection.addEventListener('icecandidateerror', (e) => {
                 console.error('ICE error:', e);
             });
-            this.connection.addEventListener('icegatheringstatechange', function(e){
+            this.connection.addEventListener('icegatheringstatechange', (e) => {
                 var connection = e.target;
-                if(connection.iceGatheringState == 'complete' && peer.pendingSdp != null){
-                    peer.$root.signalingChannel.send(JSON.stringify(peer.pendingSdp));
-                    peer.pendingSdp = null;
+                if(connection.iceGatheringState == 'complete' && this.pendingSdp != null){
+                    this.$root.signalingChannel.send(JSON.stringify(this.pendingSdp));
+                    this.pendingSdp = null;
                 }
             });
         },
         handleOffer(offer, senderId){
-            var peer = this;
-            this.connection.setRemoteDescription(new RTCSessionDescription(offer)).then(function(){
-                peer.addPendingCandidates();
-                return peer.connection.createAnswer();
-            }).then(function(answer){
-                return peer.connection.setLocalDescription(answer);
-            }).then(function(){
-                peer.pendingSdp = {
+            this.connection.setRemoteDescription(new RTCSessionDescription(offer)).then(() => {
+                this.addPendingCandidates();
+                return this.connection.createAnswer();
+            }).then((answer) => {
+                return this.connection.setLocalDescription(answer);
+            }).then(() => {
+                this.pendingSdp = {
                     action: 'answer',
                     id: senderId,
-                    answer: peer.connection.localDescription
+                    answer: this.connection.localDescription
                 };
             });
         },
         handleAnswer(answer){
             if(!this.connection.remoteDescription){
-                var peer = this;
-                this.connection.setRemoteDescription(new RTCSessionDescription(answer)).then(function(){
-                    peer.addPendingCandidates();
-                });
+                this.connection.setRemoteDescription(new RTCSessionDescription(answer)).then(() => this.addPendingCandidates());
             }
         },
         addPendingCandidates(){
-            var peer = this;
-            this.pendingCandidates.forEach(function(candidate){
-                peer.handleCandidate(candidate);
-            });
+            this.pendingCandidates.forEach((candidate) => this.handleCandidate(candidate));
             this.pendingCandidates = [];
         },
         handleCandidate(candidate){

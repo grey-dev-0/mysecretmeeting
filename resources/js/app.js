@@ -1,7 +1,8 @@
 import {createApp} from 'vue';
+import Modal from "../components/modal";
 import Peer from "../components/peer";
 import Qr from "../components/qr";
-let libraries = {Peer, Qr};
+let libraries = {Modal, Peer, Qr};
 
 let app = createApp({
     name: 'MySecretMeeting',
@@ -22,43 +23,46 @@ let app = createApp({
         }
     },
     methods: {
+        initConfirm(){
+            this.initSignalingChannel();
+        },
         setLocalPeerReady(){
             this.ready = true;
             for(var i in this.pendingPeers)
                 this.peers.push(this.pendingPeers[i]);
             this.pendingPeers = [];
-            setTimeout(function(){
-                for(var i in app.pendingMessages)
-                    app.handleSignalingMessage(app.pendingMessages[i]);
-                app.pendingMessages = [];
+            setTimeout(() => {
+                for(var i in this.pendingMessages)
+                    this.handleSignalingMessage(this.pendingMessages[i]);
+                this.pendingMessages = [];
             }, 1000);
         },
-        initSignalingChannel(qrCode){
+        initSignalingChannel(){
             this.signalingChannel = new WebSocket(baseUrl.replace(/^https?/, 'wss') + '/websocket');
-            this.signalingChannel.onopen = function(){
-                app.signalingChannel.send(JSON.stringify({
+            this.signalingChannel.onopen = () => {
+                this.signalingChannel.send(JSON.stringify({
                     action: 'init',
-                    code: qrCode
+                    code: this.roomId
                 }));
             };
             this.addSignalingListeners();
         },
         addSignalingListeners(){
-            this.signalingChannel.onmessage = function(e){
+            this.signalingChannel.onmessage = (e) => {
                 var message = JSON.parse(e.data);
                 if(message.action == 'init'){
-                    app.roomId = message.code;
-                    app.$nextTick(function(){
+                    this.roomId = message.code;
+                    this.$nextTick(() => {
                         if(message.local){
-                            app.createdAt = message.time;
-                            app.$refs.qr.initQrButtons();
+                            this.createdAt = message.time;
+                            this.$refs.qr.initQrButtons();
                         }
-                        app.initPeer(message.id, message.local, message.time);
+                        this.initPeer(message.id, message.local, message.time);
                     });
-                } else if(app.ready)
-                    app.handleSignalingMessage(message);
+                } else if(this.ready)
+                    this.handleSignalingMessage(message);
                 else
-                    app.pendingMessages.push(message);
+                    this.pendingMessages.push(message);
             }
         },
         initPeer(peerId, local, time){
@@ -84,13 +88,14 @@ let app = createApp({
                     this.$refs['p-' + message.senderId][0].handleCandidate(message.candidate);
                     break;
                 case 'close':
-                    var peerIndex = _.findIndex(this.peers, function(peer){
-                        return peer.id == message.id;
-                    });
+                    var peerIndex = _.findIndex(this.peers, (peer) => peer.id == message.id);
                     if(peerIndex != -1)
                         this.peers.splice(peerIndex, 1);
             }
         }
+    },
+    mounted(){
+        this.$refs.initConfirm.show();
     }
 });
 

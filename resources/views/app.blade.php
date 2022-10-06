@@ -11,7 +11,7 @@
     <script src="{{asset('resources/js/vue.min.js')}}"></script>
 </head>
 <body>
-<div id="app" class="container-fluid">
+<div id="app" class="container-fluid" v-cloak>
     <div class="row">
         <qr ref="qr" :code="roomId"></qr>
         <template v-for="(peer, i) in peers">
@@ -19,7 +19,17 @@
             <div class="w-100" v-if="i > 0 && (i + 2) % 4 == 0"></div>
         </template>
     </div>
+    <modal id="init-confirm" color="warning" ref="initConfirm" static>
+        <template #header>Warning</template>
+        This application will automatically stream your microphone and camera to other participants existing in the requested room when you proceed,<br/>
+        if you haven't requested a particular room by its QR, you can share the generated QR code to people you'd like to have video chat with.<br/>
+        In both cases please make sure that it is fine to share your captured video to others before you proceed.
+        <template #footer>
+            <div class="btn btn-warning" @click="initConfirm">Proceed</div>
+        </template>
+    </modal>
 </div>
+<div id="app-loader" class="text-muted">..Loading..</div>
 <script type="text/javascript">
     var baseUrl = '{{url('/')}}';
     var qrCode = '{{$qrCode}}';

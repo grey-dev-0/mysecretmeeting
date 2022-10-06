@@ -37,11 +37,6 @@ export default {
                 // TODO: run ajax to join the given QR room if exists.
             });
         }
-    },
-    mounted(){
-        this.$nextTick(function(){
-            this.$root.initSignalingChannel(this.code);
-        });
-    },
+    }
 }
 </script>
