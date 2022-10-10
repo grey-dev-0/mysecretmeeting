@@ -1,5 +1,5 @@
 <template>
-    <div class="col-12 col-md" :id="id">
+    <div class="col-12 col-md mt-2" :id="id">
         <div class="card">
             <div class="card-body row">
                 <template v-if="stream != null">
@@ -31,7 +31,7 @@ export default {
             default: 0
         }
     },
-    data : () => ({
+    data: () => ({
         stream: null,
         error: null,
         connection: null,

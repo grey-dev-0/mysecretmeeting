@@ -2,11 +2,12 @@ import {createApp} from 'vue';
 import Modal from "../components/modal";
 import Peer from "../components/peer";
 import Qr from "../components/qr";
+import {findIndex as _findIndex} from 'lodash';
 let libraries = {Modal, Peer, Qr};
 
 let app = createApp({
     name: 'MySecretMeeting',
-    data: {
+    data: () => ({
         roomId: qrCode,
         iceServers: iceServers,
         peers: [],
@@ -16,7 +17,7 @@ let app = createApp({
         pendingPeers: [],
         pendingMessages: [],
         createdAt: 0
-    },
+    }),
     computed: {
         cells(){
             return this.peers.length + 1;
@@ -25,6 +26,7 @@ let app = createApp({
     methods: {
         initConfirm(){
             this.initSignalingChannel();
+            $('#init-confirm').modal('hide');
         },
         setLocalPeerReady(){
             this.ready = true;
@@ -88,7 +90,7 @@ let app = createApp({
                     this.$refs['p-' + message.senderId][0].handleCandidate(message.candidate);
                     break;
                 case 'close':
-                    var peerIndex = _.findIndex(this.peers, (peer) => peer.id == message.id);
+                    var peerIndex = _findIndex(this.peers, (peer) => peer.id == message.id);
                     if(peerIndex != -1)
                         this.peers.splice(peerIndex, 1);
             }

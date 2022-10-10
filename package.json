@@ -9,6 +9,7 @@
     },
     "dependencies": {
         "bootstrap": "^4.6.2",
+        "clipboard": "^2.0.11",
         "core-js": "^3.25.5",
         "jquery": "^3.6.1",
         "laravel-mix": "^6.0.49",

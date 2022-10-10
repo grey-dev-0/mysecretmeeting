@@ -1,5 +1,9 @@
 @import "bootstrap/scss/bootstrap";
 
+html, body{
+  background-color: #e1e1e1;
+}
+
 #app-loader{
   display: none;
 }
