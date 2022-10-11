@@ -3,8 +3,15 @@
         <div class="card">
             <div class="card-body row">
                 <template v-if="stream != null">
-                    <video v-if="local" class="col" autoplay muted></video>
-                    <video v-else="local" class="col" autoplay></video>
+                    <template v-if="!audioOnly">
+                        <video v-if="local" class="col" autoplay muted></video>
+                        <video v-else class="col" autoplay></video>
+                    </template>
+                    <div v-else class="audio-container">
+                        <audio v-if="local" class="d-none" autoplay muted></audio>
+                        <audio v-else class="d-none" autoplay></audio>
+                        <div class="audio-note d-inline-block">Audio Only</div>
+                    </div>
                 </template>
                 <h3 v-else-if="error != null" class="col text-center error"></h3>
                 <p class="col loading" v-else>Loading..</p>
@@ -14,7 +21,9 @@
 </template>
 
 <script>
+import {find as _find} from 'lodash';
 var $ = window.$;
+
 export default {
     name: 'Peer',
     props: {
@@ -32,24 +41,32 @@ export default {
         }
     },
     data: () => ({
+        audioOnly: false,
         stream: null,
         error: null,
         connection: null,
         pendingSdp: null,
         pendingCandidates: [],
-        host: hostPeer
+        host: window.hostPeer
     }),
     methods: {
         initLocalStream(){
-            navigator.mediaDevices.getUserMedia({video: true, audio: true}).then((stream) => {
-                this.stream = stream;
-                this.$root.localStream = this.stream;
-                this.$nextTick(function(){
-                    $('#' + this.id).find('video')[0].srcObject = this.stream;
-                    this.$root.setLocalPeerReady();
+            navigator.mediaDevices.enumerateDevices().then((devices) => {
+                let withVideo = _find(devices, ['kind', 'videoinput']) !== undefined;
+                navigator.mediaDevices.getUserMedia({
+                    video: withVideo,
+                    audio: true
+                }).then((stream) => {
+                    this.audioOnly = !withVideo;
+                    this.stream = stream;
+                    this.$root.localStream = this.stream;
+                    this.$nextTick(() => {
+                        $('#' + this.id).find(withVideo? 'video' : 'audio')[0].srcObject = this.stream;
+                        this.$root.setLocalPeerReady();
+                    });
+                }).catch((error) => {
+                    this.error = error;
                 });
-            }).catch((error) => {
-                this.error = error;
             });
         },
         initRemoteStream(){
@@ -157,3 +174,25 @@ export default {
     }
 }
 </script>
+
+<style lang="scss">
+.audio-container{
+    position: relative;
+    width: 100%;
+    padding-top: 50%;
+
+    .audio-note{
+        position: absolute;
+        margin: auto;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        font-size: 1.5rem;
+        font-weight: bolder;
+        width: 100px;
+        height: 100px;
+        text-align: center;
+    }
+}
+</style>
