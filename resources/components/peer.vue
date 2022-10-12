@@ -170,6 +170,9 @@ export default {
                 this.initLocalStream();
             else
                 this.initRemotePeer();
+            $('html, body').animate({
+                scrollTop: $(document).height()
+            }, 1000);
         });
     }
 }
