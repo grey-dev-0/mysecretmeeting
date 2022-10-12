@@ -5,7 +5,15 @@ use App\Models\IceServer;
 class MainController extends Controller{
     public function getIndex(){
         if(empty($qrCode = request('c', '')) || $this->sendToWebsocket(['action' => 'query', 'code' => request('c')]))
-            return view('app', compact('qrCode') + ['iceServers' => IceServer::select(['url', 'type'])->whereActive(true)->get()]);
+            return view('app', compact('qrCode') + ['iceServers' => IceServer::select(['id', 'url', 'type'])->whereActive(true)
+                    ->with('auth')->get()->each(function($server){
+                        $server->setAttribute('urls', [$server->url]);
+                        if($server->auth){
+                            $server->setAttribute('username', $server->auth->username);
+                            $server->setAttribute('credential', $server->auth->password);
+                        }
+                        $server->setVisible(['urls', 'username', 'credential']);
+                    })]);
         return abort(404, 'Room Not Found!');
     }
 

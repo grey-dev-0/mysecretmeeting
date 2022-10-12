@@ -30,6 +30,13 @@ class AppTables extends Migration{
             $table->boolean('active')->default(false);
             $table->timestamps();
         });
+
+        Schema::create('ice_credentials', function(Blueprint $table){
+            $table->unsignedInteger('id')->primary();
+            $table->foreign('id')->references('id')->on('ice_servers')->onUpdate('cascade')->onDelete('cascade');
+            $table->string('username');
+            $table->string('password');
+        });
     }
 
     /**
@@ -38,8 +45,9 @@ class AppTables extends Migration{
      * @return void
      */
     public function down(){
-        Schema::drop('ice_servers');
-        Schema::drop('peers');
-        Schema::drop('rooms');
+        Schema::dropIfExists('ice_credentials');
+        Schema::dropIfExists('ice_servers');
+        Schema::dropIfExists('peers');
+        Schema::dropIfExists('rooms');
     }
 }

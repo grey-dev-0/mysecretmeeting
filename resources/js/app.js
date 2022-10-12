@@ -9,7 +9,7 @@ let app = createApp({
     name: 'MySecretMeeting',
     data: () => ({
         roomId: qrCode,
-        iceServers: iceServers,
+        iceServers: window.iceServers,
         peers: [],
         signalingChannel: null,
         localStream: null,

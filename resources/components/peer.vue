@@ -1,6 +1,6 @@
 <template>
     <div class="col-12 col-md mt-2" :id="id">
-        <div class="card">
+        <div class="card peer">
             <div class="card-body row">
                 <template v-if="stream != null">
                     <template v-if="!audioOnly">
@@ -176,6 +176,12 @@ export default {
 </script>
 
 <style lang="scss">
+.peer{
+    video{
+        transform: rotateY(180deg);
+    }
+}
+
 .audio-container{
     position: relative;
     width: 100%;

@@ -36,7 +36,7 @@
     var baseUrl = '{{url('/')}}';
     var qrCode = '{{$qrCode}}';
     var hostPeer = qrCode == '';
-    var iceServers = @json($iceServers->toJson());
+    var iceServers = @json($iceServers);
 </script>
 <script src="{{asset(mix('js/app.js'))}}"></script>
 </body>
