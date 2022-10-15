@@ -12,6 +12,11 @@ class RoomHandler{
     private $connections = [];
 
     /**
+     * @var array $recorders The initialized room recorders.
+     */
+    private $recorders = [];
+
+    /**
      * Adds new websocket connection to server memory for later contact.
      *
      * @param $connection ConnectionInterface
@@ -23,11 +28,11 @@ class RoomHandler{
     /**
      * Gets the websocket connection by its given ID.
      *
-     * @param $connectionId int
+     * @param $connectionId ?int
      * @return ConnectionInterface
      */
     public function getConnection($connectionId){
-        return $this->connections[$connectionId];
+        return $this->connections[$connectionId]?? null;
     }
 
     /**
@@ -57,8 +62,10 @@ class RoomHandler{
     }
 
     public function peerInitialized($roomId, $peerId){
-        if(empty($roomId) || is_null($room = Room::find($roomId)))
-            $room = Room::create(['id' => sha1($peerId.'_'.date('Y-m-d.H_i_s'))]);
+        if(empty($roomId) || is_null($room = Room::find($roomId))){
+            $room = Room::create(['id' => sha1($peerId . '_' . date('Y-m-d.H_i_s'))]);
+            $this->setupRecorder($roomId);
+        }
         $room->peers()->create(['id' => $peerId]);
         return $room->id;
     }
@@ -82,6 +89,39 @@ class RoomHandler{
             $this->sendMessage($callee, ['action' => 'init', 'id' => $caller->resourceId, 'local' => false, 'code' => $roomId] + compact('time'));
             $this->sendMessage($caller, ['action' => 'init', 'id' => $callee->resourceId, 'local' => false, 'code' => $roomId] + compact('time'));
         }
+    }
+
+    /**
+     * Invokes the recorder server for the provided room, if recording is enabled.
+     *
+     * @param string $roomId The ID of the room to be recorded.
+     * @return void
+     */
+    private function setupRecorder($roomId){
+        if(!env('RECORD_CALLS', false))
+            return;
+        $command = env('RECORD_COMMAND', './record')." --room=$roomId";
+        if($size = env('RECORD_SIZE'))
+            $command .= " --size=$size";
+        `nohup $command > storage/logs/recording/$roomId.log 2>&1 &`;
+    }
+
+    /**
+     * Initializes the recording process of a given room or peer.
+     *
+     * @param $connection ConnectionInterface The connection of the recording server.
+     * @param $message array The initialization message sent by the recording server.
+     * @return void
+     */
+    public function initRecorder($connection, $message){
+        if(isset($message['room']))
+            $this->recorders[$connection->resourceId] = $message['room'];
+        elseif($peer = Peer::whereRoomId($this->recorders[$connection->resourceId])->whereId($message['peer'])->first(['id']))
+            if($peerConnection = $this->getConnection($peer->id))
+                $this->sendMessage($peerConnection, [
+                    'action' => 'record',
+                    'senderId' => $connection->resourceId
+                ]);
     }
 
     public function sendSdpOrIce($message, $senderId){

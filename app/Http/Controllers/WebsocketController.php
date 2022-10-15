@@ -25,7 +25,7 @@ class WebsocketController extends Controller implements MessageComponentInterfac
      * @inheritDoc
      */
     function onClose(ConnectionInterface $connection){
-        $this->roomHandler->peerDisconnected($connectionId = $connection->resourceId);
+        $this->roomHandler->peerDisconnected($connection->resourceId);
     }
 
     /**
@@ -46,6 +46,7 @@ class WebsocketController extends Controller implements MessageComponentInterfac
         switch($message['action']){
             case 'init': $this->roomHandler->initializePeers($connection, $message); break;
             case 'query': $this->roomHandler->roomExists($connection, $message['code']); break;
+            case 'record': $this->roomHandler->initRecorder($connection, $message); break;
             case 'offer':
             case 'answer':
             case 'candidate':
