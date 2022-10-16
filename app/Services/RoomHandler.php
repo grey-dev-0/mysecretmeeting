@@ -49,8 +49,11 @@ class RoomHandler{
     }
 
     public function peerDisconnected($peerId){
-        if(is_null($peer = Peer::find($peerId)))
+        if(is_null($peer = Peer::find($peerId))){
+            if(isset($this->recorders[$peerId]))
+                unset($this->recorders[$peerId]);
             return;
+        }
         $roomId = $peer->room_id;
         $peer->delete();
         if(Peer::whereRoomId($roomId)->count() == 0)
@@ -64,9 +67,14 @@ class RoomHandler{
     public function peerInitialized($roomId, $peerId){
         if(empty($roomId) || is_null($room = Room::find($roomId))){
             $room = Room::create(['id' => sha1($peerId . '_' . date('Y-m-d.H_i_s'))]);
-            $this->setupRecorder($roomId);
+            $this->setupRecorder($room->id);
         }
         $room->peers()->create(['id' => $peerId]);
+        if(($recorderId = array_search($room->id, $this->recorders)) !== false)
+            $this->sendMessage($this->connections[$recorderId], [
+                'action' => 'peer',
+                'id' => $peerId
+            ]);
         return $room->id;
     }
 
@@ -114,9 +122,11 @@ class RoomHandler{
      * @return void
      */
     public function initRecorder($connection, $message){
-        if(isset($message['room']))
+        if(isset($message['room'])){
             $this->recorders[$connection->resourceId] = $message['room'];
-        elseif($peer = Peer::whereRoomId($this->recorders[$connection->resourceId])->whereId($message['peer'])->first(['id']))
+            Peer::whereRoomId($message['room'])->get(['id'])->pluck('id')
+                ->each(fn($peerId) => $this->sendMessage($connection, ['action' => 'peer', 'id' => $peerId]));
+        } elseif($peer = Peer::whereRoomId($this->recorders[$connection->resourceId])->whereId($message['peer'])->first(['id']))
             if($peerConnection = $this->getConnection($peer->id))
                 $this->sendMessage($peerConnection, [
                     'action' => 'record',
