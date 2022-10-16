@@ -1,5 +1,5 @@
 <template>
-    <div class="col-12 col-md mt-2" :id="id">
+    <div class="col-12 col-md mt-2" v-if="!recording" :id="id">
         <div class="card peer">
             <div class="card-body row">
                 <template v-if="stream != null">
@@ -38,6 +38,10 @@ export default {
         createdAt: {
             type: Number,
             default: 0
+        },
+        recording: {
+            type: Boolean,
+            default: false
         }
     },
     data: () => ({
@@ -75,6 +79,8 @@ export default {
                     if(this.sendLocalStream())
                         clearInterval(localStreamSent);
                 }, 100);
+            if(this.recording)
+                return;
             this.stream = new MediaStream();
             this.connection.addEventListener('track', (e) => {
                 var peerVideo = $('#' + this.id).find('video')[0];
@@ -100,10 +106,8 @@ export default {
             });
             this.initRemoteStream();
             this.addIceListeners();
-            if(this.createdAt > this.$root.createdAt){
-                this.connection.createOffer().then((offer) => {
-                    return this.connection.setLocalDescription(offer);
-                }).then(() => {
+            if(this.recording || this.createdAt > this.$root.createdAt){
+                this.connection.createOffer().then((offer) => this.connection.setLocalDescription(offer)).then(() => {
                     this.pendingSdp = {
                         action: 'offer',
                         id: this.id,

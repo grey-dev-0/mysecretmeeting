@@ -16,7 +16,7 @@
     <div class="row mb-2">
         <qr ref="qr" :code="roomId"></qr>
         <template v-for="(peer, i) in peers">
-            <peer :ref="'p-'+peer.id" :id="peer.id" :local="peer.local" :created-at="peer.time"></peer>
+            <peer :ref="'p-'+peer.id" :id="peer.id" :local="peer.local" :created-at="peer.time" :recording="peer.recording"></peer>
             <div class="w-100" v-if="i > 0 && (i + 2) % 4 == 0"></div>
         </template>
     </div>

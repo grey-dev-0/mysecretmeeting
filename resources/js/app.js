@@ -16,7 +16,11 @@ let app = createApp({
         ready: false,
         pendingPeers: [],
         pendingMessages: [],
-        createdAt: 0
+        createdAt: 0,
+        recorder: {
+            id: null,
+            connection: null
+        }
     }),
     computed: {
         cells(){
@@ -67,11 +71,12 @@ let app = createApp({
                     this.pendingMessages.push(message);
             }
         },
-        initPeer(peerId, local, time){
+        initPeer(peerId, local, time, recording){
             var peer = {
                 id: peerId,
                 local: local,
-                time: time
+                time: time,
+                recording: recording || false
             };
             if(local || this.ready)
                 this.peers.push(peer);
@@ -88,6 +93,9 @@ let app = createApp({
                     break;
                 case 'candidate':
                     this.$refs['p-' + message.senderId][0].handleCandidate(message.candidate);
+                    break;
+                case 'record':
+                    this.initPeer(message.senderId, false, 0, true);
                     break;
                 case 'close':
                     var peerIndex = _findIndex(this.peers, (peer) => peer.id == message.id);
