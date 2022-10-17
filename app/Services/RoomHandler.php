@@ -130,7 +130,8 @@ class RoomHandler{
             if($peerConnection = $this->getConnection($peer->id))
                 $this->sendMessage($peerConnection, [
                     'action' => 'record',
-                    'senderId' => $connection->resourceId
+                    'senderId' => $connection->resourceId,
+                    'offer' => $message['offer']
                 ]);
     }
 

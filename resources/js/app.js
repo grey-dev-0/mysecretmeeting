@@ -76,7 +76,7 @@ let app = createApp({
                 id: peerId,
                 local: local,
                 time: time,
-                recording: recording || false
+                recording: recording
             };
             if(local || this.ready)
                 this.peers.push(peer);
@@ -95,7 +95,7 @@ let app = createApp({
                     this.$refs['p-' + message.senderId][0].handleCandidate(message.candidate);
                     break;
                 case 'record':
-                    this.initPeer(message.senderId, false, 0, true);
+                    this.initPeer(message.senderId, false, 0, message.offer);
                     break;
                 case 'close':
                     var peerIndex = _findIndex(this.peers, (peer) => peer.id == message.id);

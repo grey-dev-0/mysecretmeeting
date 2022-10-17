@@ -40,8 +40,7 @@ export default {
             default: 0
         },
         recording: {
-            type: Boolean,
-            default: false
+            required: false
         }
     },
     data: () => ({
@@ -106,7 +105,9 @@ export default {
             });
             this.initRemoteStream();
             this.addIceListeners();
-            if(this.recording || this.createdAt > this.$root.createdAt){
+            if(this.recording)
+                this.handleOffer(this.recording, this.id)
+            else if(this.createdAt > this.$root.createdAt){
                 this.connection.createOffer().then((offer) => this.connection.setLocalDescription(offer)).then(() => {
                     this.pendingSdp = {
                         action: 'offer',
