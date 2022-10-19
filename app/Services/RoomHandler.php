@@ -62,6 +62,7 @@ class RoomHandler{
             $this->sendMessage($this->getConnections(Peer::whereRoomId($roomId)->pluck('id')),
                 ['action' => 'close', 'id' => $peerId]);
         unset($this->connections[$peerId]);
+        $this->terminateRecording($roomId, $peerId);
     }
 
     public function peerInitialized($roomId, $peerId){
@@ -133,6 +134,23 @@ class RoomHandler{
                     'senderId' => $connection->resourceId,
                     'offer' => $message['offer']
                 ]);
+    }
+
+    /**
+     * Stops the recording process for the given peer who's disconnected from the provided room.
+     *
+     * @param int $roomId The ID of the room that the peer has exited from.
+     * @param int $peerId The ID of the peer who exited.
+     * @return void
+     */
+    public function terminateRecording($roomId, $peerId){
+        $recorderId = array_search($roomId, $this->recorders);
+        if($recorderId === false)
+            return;
+        $this->sendMessage($this->connections[$recorderId], [
+            'action' => 'disconnect',
+            'peer' => $peerId
+        ]);
     }
 
     public function sendSdpOrIce($message, $senderId){
