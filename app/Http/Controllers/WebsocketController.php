@@ -53,6 +53,7 @@ class WebsocketController extends Controller implements MessageComponentInterfac
                 $this->roomHandler->sendSdpOrIce($message, $connection->resourceId);
 
         }
-        fwrite(STDOUT, json_encode($message)."\n");
+        if(!isset($message['action']) || $message['action'] != 'ping')
+            fwrite(STDOUT, json_encode($message)."\n");
     }
 }

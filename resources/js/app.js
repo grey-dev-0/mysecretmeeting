@@ -50,6 +50,9 @@ let app = createApp({
                     action: 'init',
                     code: this.roomId
                 }));
+                setInterval(() => {
+                    this.signalingChannel.send(JSON.stringify({action: 'ping'}));
+                }, 15000);
             };
             this.addSignalingListeners();
         },
