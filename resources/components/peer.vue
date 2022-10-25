@@ -21,7 +21,6 @@
 </template>
 
 <script>
-import {find as _find} from 'lodash';
 var $ = window.$;
 
 export default {
@@ -41,10 +40,13 @@ export default {
         },
         recording: {
             required: false
+        },
+        audioOnly: {
+            type: Boolean,
+            default: false
         }
     },
     data: () => ({
-        audioOnly: false,
         stream: null,
         error: null,
         connection: null,
@@ -54,22 +56,18 @@ export default {
     }),
     methods: {
         initLocalStream(){
-            navigator.mediaDevices.enumerateDevices().then((devices) => {
-                let withVideo = _find(devices, ['kind', 'videoinput']) !== undefined;
-                navigator.mediaDevices.getUserMedia({
-                    video: withVideo,
-                    audio: true
-                }).then((stream) => {
-                    this.audioOnly = !withVideo;
-                    this.stream = stream;
-                    this.$root.localStream = this.stream;
-                    this.$nextTick(() => {
-                        $('#' + this.id).find(withVideo? 'video' : 'audio')[0].srcObject = this.stream;
-                        this.$root.setLocalPeerReady();
-                    });
-                }).catch((error) => {
-                    this.error = error;
+            navigator.mediaDevices.getUserMedia({
+                video: !this.audioOnly,
+                audio: true
+            }).then((stream) => {
+                this.stream = stream;
+                this.$root.localStream = this.stream;
+                this.$nextTick(() => {
+                    $('#' + this.id).find(withVideo? 'video' : 'audio')[0].srcObject = this.stream;
+                    this.$root.setLocalPeerReady();
                 });
+            }).catch((error) => {
+                this.error = error;
             });
         },
         initRemoteStream(){

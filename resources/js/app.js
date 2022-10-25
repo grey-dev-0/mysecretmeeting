@@ -2,7 +2,7 @@ import {createApp} from 'vue';
 import Modal from "../components/modal";
 import Peer from "../components/peer";
 import Qr from "../components/qr";
-import {findIndex as _findIndex} from 'lodash';
+import {find as _find, findIndex as _findIndex} from 'lodash';
 let libraries = {Modal, Peer, Qr};
 
 let app = createApp({
@@ -46,10 +46,15 @@ let app = createApp({
         initSignalingChannel(){
             this.signalingChannel = new WebSocket(baseUrl.replace(/^https?/, 'wss') + '/websocket');
             this.signalingChannel.onopen = () => {
-                this.signalingChannel.send(JSON.stringify({
-                    action: 'init',
-                    code: this.roomId
-                }));
+                navigator.mediaDevices.enumerateDevices().then((devices) => {
+                    let audioOnly = (!window.audioOnly)?
+                        (_find(devices, ['kind', 'videoinput']) !== undefined) : window.audioOnly;
+                    this.signalingChannel.send(JSON.stringify({
+                        action: 'init',
+                        code: this.roomId,
+                        audio_only: audioOnly
+                    }));
+                });
                 setInterval(() => {
                     this.signalingChannel.send(JSON.stringify({action: 'ping'}));
                 }, 15000);
@@ -66,7 +71,7 @@ let app = createApp({
                             this.createdAt = message.time;
                             this.$refs.qr.initQrButtons();
                         }
-                        this.initPeer(message.id, message.local, message.time);
+                        this.initPeer(message);
                     });
                 } else if(this.ready)
                     this.handleSignalingMessage(message);
@@ -74,13 +79,9 @@ let app = createApp({
                     this.pendingMessages.push(message);
             }
         },
-        initPeer(peerId, local, time, recording){
-            var peer = {
-                id: peerId,
-                local: local,
-                time: time,
-                recording: recording
-            };
+        initPeer(initMessage){
+            let {id, local, time, recording, audio_only: audioOnly} = initMessage;
+            let peer = {id, local, time, recording, audioOnly};
             if(local || this.ready)
                 this.peers.push(peer);
             else

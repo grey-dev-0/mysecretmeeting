@@ -112,6 +112,8 @@ class RoomHandler{
         $command = env('RECORD_COMMAND', './record')." --room=$roomId";
         if($size = env('RECORD_SIZE'))
             $command .= " --size=$size";
+        if(env('AUDIO_ONLY', false))
+            $command .= ' --audioOnly';
         `nohup $command > storage/logs/recording/$roomId.log 2>&1 &`;
     }
 

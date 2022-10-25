@@ -16,7 +16,8 @@
     <div class="row mb-2">
         <qr ref="qr" :code="roomId"></qr>
         <template v-for="(peer, i) in peers">
-            <peer :ref="'p-'+peer.id" :id="peer.id" :local="peer.local" :created-at="peer.time" :recording="peer.recording"></peer>
+            <peer :ref="'p-'+peer.id" :id="peer.id" :local="peer.local" :created-at="peer.time"
+                  :recording="peer.recording" :audio-only="peer.audioOnly"></peer>
             <div class="w-100" v-if="i > 0 && (i + 2) % 4 == 0"></div>
         </template>
     </div>
@@ -37,6 +38,7 @@
     var qrCode = '{{$qrCode}}';
     var hostPeer = qrCode == '';
     var iceServers = @json($iceServers);
+    var audioOnly = {{env('AUDIO_ONLY', false)}};
 </script>
 <script src="{{asset(mix('js/app.js'))}}"></script>
 </body>
