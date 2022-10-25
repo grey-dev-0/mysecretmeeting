@@ -38,7 +38,7 @@
     var qrCode = '{{$qrCode}}';
     var hostPeer = qrCode == '';
     var iceServers = @json($iceServers);
-    var audioOnly = {{env('AUDIO_ONLY', false)}};
+    var audioOnly = {{env('AUDIO_ONLY', false)? 'true' : 'false'}};
 </script>
 <script src="{{asset(mix('js/app.js'))}}"></script>
 </body>

@@ -63,7 +63,7 @@ export default {
                 this.stream = stream;
                 this.$root.localStream = this.stream;
                 this.$nextTick(() => {
-                    $('#' + this.id).find(withVideo? 'video' : 'audio')[0].srcObject = this.stream;
+                    $('#' + this.id).find(this.audioOnly? 'audio' : 'video')[0].srcObject = this.stream;
                     this.$root.setLocalPeerReady();
                 });
             }).catch((error) => {
@@ -80,10 +80,10 @@ export default {
                 return;
             this.stream = new MediaStream();
             this.connection.addEventListener('track', (e) => {
-                var peerVideo = $('#' + this.id).find('video')[0];
+                var peerMedia = $('#' + this.id).find((this.audioOnly)? 'audio' : 'video')[0];
                 this.stream.addTrack(e.track);
-                if(!peerVideo.srcObject)
-                    peerVideo.srcObject = this.stream;
+                if(!peerMedia.srcObject)
+                    peerMedia.srcObject = this.stream;
                 console.log('Remote Track Added', e.track);
             });
         },

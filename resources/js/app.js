@@ -47,8 +47,7 @@ let app = createApp({
             this.signalingChannel = new WebSocket(baseUrl.replace(/^https?/, 'wss') + '/websocket');
             this.signalingChannel.onopen = () => {
                 navigator.mediaDevices.enumerateDevices().then((devices) => {
-                    let audioOnly = (!window.audioOnly)?
-                        (_find(devices, ['kind', 'videoinput']) !== undefined) : window.audioOnly;
+                    let audioOnly = window.audioOnly || (_find(devices, ['kind', 'videoinput']) === undefined);
                     this.signalingChannel.send(JSON.stringify({
                         action: 'init',
                         code: this.roomId,
@@ -99,7 +98,13 @@ let app = createApp({
                     this.$refs['p-' + message.senderId][0].handleCandidate(message.candidate);
                     break;
                 case 'record':
-                    this.initPeer(message.senderId, false, 0, message.offer);
+                    this.initPeer({
+                        id: message.senderId,
+                        time: 0,
+                        local: false,
+                        audioOnly: window.audioOnly,
+                        recording: message.offer
+                    });
                     break;
                 case 'close':
                     var peerIndex = _findIndex(this.peers, (peer) => peer.id == message.id);

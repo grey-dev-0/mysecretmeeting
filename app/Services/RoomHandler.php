@@ -65,17 +65,17 @@ class RoomHandler{
         $this->terminateRecording($roomId, $peerId);
     }
 
-    public function peerInitialized($roomId, $peerId){
+    public function peerInitialized($roomId, $peerId, $audio_only){
         if(empty($roomId) || is_null($room = Room::find($roomId))){
             $room = Room::create(['id' => sha1($peerId . '_' . date('Y-m-d.H_i_s'))]);
             $this->setupRecorder($room->id);
         }
-        $room->peers()->create(['id' => $peerId]);
+        $room->peers()->create(['id' => $peerId] + compact('audio_only'));
         if(($recorderId = array_search($room->id, $this->recorders)) !== false)
             $this->sendMessage($this->connections[$recorderId], [
                 'action' => 'peer',
                 'id' => $peerId
-            ]);
+            ] + compact('audio_only'));
         return $room->id;
     }
 
@@ -90,13 +90,19 @@ class RoomHandler{
      * @param $message array The message that the caller has sent.
      */
     public function initializePeers($caller, &$message){
-        $roomId = $this->peerInitialized($message['code'], $caller->resourceId);
+        $roomId = $this->peerInitialized($message['code'], $caller->resourceId, $message['audio_only']);
         $time = time();
-        $this->sendMessage($caller, ['action' => 'init', 'id' => $caller->resourceId, 'local' => true, 'code' => $roomId] + compact('time'));
-        $callees = $this->getConnections(Peer::whereRoomId($roomId)->where('id', '!=', $caller->resourceId)->pluck('id'));
+        $audio_only = $message['audio_only'];
+        $this->sendMessage($caller, ['action' => 'init', 'id' => $caller->resourceId, 'local' => true, 'code' => $roomId]
+            + compact('time', 'audio_only'));
+        $callees = Peer::whereRoomId($roomId)->where('id', '!=', $caller->resourceId)->get(['id', 'audio_only']);
         foreach($callees as $callee){
-            $this->sendMessage($callee, ['action' => 'init', 'id' => $caller->resourceId, 'local' => false, 'code' => $roomId] + compact('time'));
-            $this->sendMessage($caller, ['action' => 'init', 'id' => $callee->resourceId, 'local' => false, 'code' => $roomId] + compact('time'));
+            if(empty($connection = $this->getConnection($callee->id)))
+                continue;
+            $this->sendMessage($connection, ['action' => 'init', 'id' => $caller->resourceId, 'local' => false, 'code' => $roomId]
+                + compact('time', 'audio_only'));
+            $this->sendMessage($caller, ['action' => 'init', 'id' => $connection->resourceId, 'local' => false, 'code' => $roomId]
+                + compact('time') + $callee->only(['audio_only']));
         }
     }
 
@@ -127,8 +133,9 @@ class RoomHandler{
     public function initRecorder($connection, $message){
         if(isset($message['room'])){
             $this->recorders[$connection->resourceId] = $message['room'];
-            Peer::whereRoomId($message['room'])->get(['id'])->pluck('id')
-                ->each(fn($peerId) => $this->sendMessage($connection, ['action' => 'peer', 'id' => $peerId]));
+            Peer::whereRoomId($message['room'])->get(['id', 'audio_only'])
+                ->each(fn($peer) => $this->sendMessage($connection, ['action' => 'peer', 'id' => $peer->id]
+                    + $peer->only(['audio_only'])));
         } elseif($peer = Peer::whereRoomId($this->recorders[$connection->resourceId])->whereId($message['peer'])->first(['id']))
             if($peerConnection = $this->getConnection($peer->id))
                 $this->sendMessage($peerConnection, [
