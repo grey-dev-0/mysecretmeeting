@@ -25,7 +25,10 @@
         <template #header>Warning</template>
         <p>This application will automatically stream your microphone and camera to other participants existing in the requested room when you proceed.</p>
         <p>If you haven't requested a particular room by its QR, you can share the generated QR code to people you'd like to have video chat with.</p>
-        <p class="mb-0">In both cases please make sure that it is fine to share your captured video to others before you proceed.</p>
+        <p @if(!env('RECORD_CALLS')) class="mb-0" @endif>In both cases please make sure that it's appropriate to share your captured video to others before you proceed.</p>
+        @if(env('RECORD_CALLS'))
+            <p><strong>This room will be recorded for testing the streaming and recording functionalities so, please ensure that you DONT disclose any private information during this session.</strong></p>
+        @endif
         <template #footer>
             <div class="btn btn-warning" @click="initConfirm">Proceed</div>
             <div class="btn btn-outline-secondary" data-dismiss="modal">Decline</div>
